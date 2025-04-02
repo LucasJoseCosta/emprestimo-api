@@ -1,6 +1,7 @@
 package com.emprestimo.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.emprestimo.dto.ClienteDTO;
 import com.emprestimo.dto.ClientePaginated;
+import com.emprestimo.dto.EmprestimoDTO;
 import com.emprestimo.errors.NotFoundException;
 import com.emprestimo.model.Cliente;
 import com.emprestimo.service.ClienteServiceImp;
@@ -43,7 +45,8 @@ public class ClienteController {
 		if (pageable.getPageNumber() > 1) {
 	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
 	    } else {
-	        pageable = PageRequest.of(0, pageable.getPageSize(), Sort.by("id").ascending());
+	        Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("id").ascending();
+	        pageable = PageRequest.of(0, pageable.getPageSize(), sort);
 	    }
 		
 		Optional<ClientePaginated> result = clienteServiceImp.findAllPaginated(searchTerm,pageable);
@@ -57,6 +60,17 @@ public class ClienteController {
 
 		return ResponseEntity.ok(result.get());
 	}
+	
+	@GetMapping("/all")
+    public ResponseEntity<List<ClienteDTO>> getAll() {
+        List<ClienteDTO> clientes = clienteServiceImp.findAll();
+
+        if (clientes.isEmpty()) {
+            return ResponseEntity.noContent().build(); 
+        }
+
+        return ResponseEntity.ok(clientes); 
+    }
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> findById(@PathVariable Long id) {

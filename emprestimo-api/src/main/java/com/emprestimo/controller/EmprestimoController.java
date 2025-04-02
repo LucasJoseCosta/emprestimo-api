@@ -7,6 +7,9 @@ import com.emprestimo.errors.NotFoundException;
 import com.emprestimo.model.Emprestimo;
 import com.emprestimo.service.EmprestimoService;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,13 +30,25 @@ public class EmprestimoController {
     public ResponseEntity<EmprestimoPaginated> getAllEmprestimos(@PageableDefault(page = 0)Pageable pageable) {
     	if (pageable.getPageNumber() > 1) {
 	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-	    } else {
-	        pageable = PageRequest.of(0, pageable.getPageSize(), Sort.by("id").ascending());
+	    }  else {
+	        Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("id").ascending();
+	        pageable = PageRequest.of(0, pageable.getPageSize(), sort);
 	    }
     	
         return emprestimoService.findAllPaginated(pageable)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+    
+    @GetMapping("/all")
+    public ResponseEntity<List<EmprestimoDTO>> getAll() {
+        List<EmprestimoDTO> emprestimos = emprestimoService.findAll();
+
+        if (emprestimos.isEmpty()) {
+            return ResponseEntity.noContent().build(); 
+        }
+
+        return ResponseEntity.ok(emprestimos); 
     }
 
     @GetMapping("/{id}")

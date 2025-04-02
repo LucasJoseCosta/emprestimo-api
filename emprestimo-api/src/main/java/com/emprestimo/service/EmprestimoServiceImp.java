@@ -2,9 +2,11 @@ package com.emprestimo.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,10 +23,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 @Service
-public class EmprestimoServiceImp implements EmprestimoService{
+public class EmprestimoServiceImp implements EmprestimoService {
+	@Autowired
+	private ModelMapper modelMapper;
+
 	@Autowired
 	private EmprestimoRepository emprestimoRepository;
-	
+
 	@PersistenceContext
 	private EntityManager entityManager;
 
@@ -37,14 +42,18 @@ public class EmprestimoServiceImp implements EmprestimoService{
 		}
 
 		EmprestimoPaginated response = new EmprestimoPaginated(
-			emprestimosPage.getContent().stream().map(EmprestimoDTO::new).collect(Collectors.toList()),
-			emprestimosPage.getNumber(),
-			emprestimosPage.getSize(),
-			emprestimosPage.getTotalElements(),
-			emprestimosPage.getTotalPages()
-		);
+				emprestimosPage.getContent().stream().map(EmprestimoDTO::new).collect(Collectors.toList()),
+				emprestimosPage.getNumber(), emprestimosPage.getSize(), emprestimosPage.getTotalElements(),
+				emprestimosPage.getTotalPages());
 
 		return Optional.of(response);
+	}
+
+	@Override
+	public List<EmprestimoDTO> findAll() {
+		return emprestimoRepository.findAll().stream()
+				.map(emprestimo -> (EmprestimoDTO) modelMapper.map(emprestimo, EmprestimoDTO.class))
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -62,24 +71,24 @@ public class EmprestimoServiceImp implements EmprestimoService{
 	public Optional<EmprestimoDTO> update(Long id, Emprestimo emprestimo) {
 		Optional<Emprestimo> existingEmprestimoOptional = emprestimoRepository.findById(id);
 
-	    if (existingEmprestimoOptional.isPresent()) {
-	    	Emprestimo existingEmprestimo = existingEmprestimoOptional.get();
+		if (existingEmprestimoOptional.isPresent()) {
+			Emprestimo existingEmprestimo = existingEmprestimoOptional.get();
 
-	        existingEmprestimo.setCliente(emprestimo.getCliente());
-	        existingEmprestimo.setDataEmprestimo(emprestimo.getDataEmprestimo());
-	        existingEmprestimo.setMoeda(emprestimo.getMoeda());
-	        existingEmprestimo.setValorObtido(emprestimo.getValorObtido());
-	        existingEmprestimo.setTaxaConversao(emprestimo.getTaxaConversao());
-	        existingEmprestimo.setDataVencimento(emprestimo.getDataVencimento());
-	        existingEmprestimo.setPeriodoParcelamento(emprestimo.getPeriodoParcelamento());
-	        existingEmprestimo.setValorPagamento(emprestimo.getValorPagamento());
+			existingEmprestimo.setCliente(emprestimo.getCliente());
+			existingEmprestimo.setDataEmprestimo(emprestimo.getDataEmprestimo());
+			existingEmprestimo.setMoeda(emprestimo.getMoeda());
+			existingEmprestimo.setValorObtido(emprestimo.getValorObtido());
+			existingEmprestimo.setTaxaConversao(emprestimo.getTaxaConversao());
+			existingEmprestimo.setDataVencimento(emprestimo.getDataVencimento());
+			existingEmprestimo.setPeriodoParcelamento(emprestimo.getPeriodoParcelamento());
+			existingEmprestimo.setValorPagamento(emprestimo.getValorPagamento());
 
-	        Emprestimo updatedEmprestimo = emprestimoRepository.save(existingEmprestimo);
+			Emprestimo updatedEmprestimo = emprestimoRepository.save(existingEmprestimo);
 
-	        return Optional.of(new EmprestimoDTO(updatedEmprestimo));
-	    } else {
-	        throw new NotFoundException("Cliente não encontrado para ID: " + id);
-	    }
+			return Optional.of(new EmprestimoDTO(updatedEmprestimo));
+		} else {
+			throw new NotFoundException("Cliente não encontrado para ID: " + id);
+		}
 	}
 
 	@Override
@@ -89,31 +98,24 @@ public class EmprestimoServiceImp implements EmprestimoService{
 
 	@Override
 	public Optional<EmprestimoSimuladoDTO> simularEmprestimo(EmprestimoSimuladoDTO request) {
-	    LocalDate dataEmprestimo = request.getDataEmprestimo();
+		LocalDate dataEmprestimo = request.getDataEmprestimo();
 
-	    int meses = request.getPeriodoParcelamento().getMeses();
-	    int diaVencimento = request.getDataVencimento().getDia();
+		int meses = request.getPeriodoParcelamento().getMeses();
+		int diaVencimento = request.getDataVencimento().getDia();
 
-	    LocalDate dataVencimentoCalculada = dataEmprestimo.plusMonths(meses);
-	    dataVencimentoCalculada = dataVencimentoCalculada.withDayOfMonth(
-	        Math.min(diaVencimento, dataVencimentoCalculada.lengthOfMonth())
-	    );
+		LocalDate dataVencimentoCalculada = dataEmprestimo.plusMonths(meses);
+		dataVencimentoCalculada = dataVencimentoCalculada
+				.withDayOfMonth(Math.min(diaVencimento, dataVencimentoCalculada.lengthOfMonth()));
 
-	    BigDecimal valorConvertido = request.getValorObtido().multiply(request.getTaxaConversao());
+		BigDecimal valorConvertido = request.getValorObtido().multiply(request.getTaxaConversao());
 
-	    final BigDecimal JUROS_MENSAL = new BigDecimal("0.02");
-	    BigDecimal fator = BigDecimal.ONE.add(JUROS_MENSAL).pow(meses);
-	    BigDecimal valorPagamento = valorConvertido.multiply(fator);
+		final BigDecimal JUROS_MENSAL = new BigDecimal("0.02");
+		BigDecimal fator = BigDecimal.ONE.add(JUROS_MENSAL).pow(meses);
+		BigDecimal valorPagamento = valorConvertido.multiply(fator);
 
-	    return Optional.of(new EmprestimoSimuladoDTO(
-	        request.getDataEmprestimo(),
-	        request.getMoeda(),
-	        request.getValorObtido(),
-	        request.getTaxaConversao(),
-	        request.getDataVencimento(),
-	        request.getPeriodoParcelamento(),
-	        valorPagamento
-	    ));
+		return Optional.of(new EmprestimoSimuladoDTO(request.getDataEmprestimo(), request.getMoeda(),
+				request.getValorObtido(), request.getTaxaConversao(), request.getDataVencimento(),
+				request.getPeriodoParcelamento(), valorPagamento));
 	}
-	
+
 }

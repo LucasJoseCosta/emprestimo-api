@@ -1,8 +1,10 @@
 package com.emprestimo.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,43 +21,47 @@ import jakarta.persistence.PersistenceContext;
 
 @Service
 public class ClienteServiceImp implements ClienteService {
-	
+	@Autowired
+	private ModelMapper modelMapper;
+
 	@Autowired
 	private ClienteRepository clienteRepository;
-	
+
 	@PersistenceContext
 	private EntityManager entityManager;
 
 	@Override
 	public Optional<ClientePaginated> findAllPaginated(String searchTerm, Pageable pageable) {
-	    Page<Cliente> clientesPage;
-	    
-	    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
-	        try {
-	            Long id = Long.parseLong(searchTerm);
-	            clientesPage = clienteRepository.findByIdOrNomeContainingIgnoreCase(id, searchTerm, pageable);
-	        } catch (NumberFormatException e) {
-	            clientesPage = clienteRepository.findByNomeContainingIgnoreCase(searchTerm, pageable);
-	        }
-	    } else {
-	        clientesPage = clienteRepository.findAll(pageable);
-	    }
+		Page<Cliente> clientesPage;
 
-	    if (clientesPage.isEmpty()) {
-	        return Optional.empty();
-	    }
+		if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+			try {
+				Long id = Long.parseLong(searchTerm);
+				clientesPage = clienteRepository.findByIdOrNomeContainingIgnoreCase(id, searchTerm, pageable);
+			} catch (NumberFormatException e) {
+				clientesPage = clienteRepository.findByNomeContainingIgnoreCase(searchTerm, pageable);
+			}
+		} else {
+			clientesPage = clienteRepository.findAll(pageable);
+		}
 
-	    ClientePaginated response = new ClientePaginated(
-	        clientesPage.getContent().stream().map(ClienteDTO::new).collect(Collectors.toList()),
-	        clientesPage.getNumber(),
-	        clientesPage.getSize(),
-	        clientesPage.getTotalElements(),
-	        clientesPage.getTotalPages()
-	    );
+		if (clientesPage.isEmpty()) {
+			return Optional.empty();
+		}
 
-	    return Optional.of(response);
+		ClientePaginated response = new ClientePaginated(
+				clientesPage.getContent().stream().map(ClienteDTO::new).collect(Collectors.toList()),
+				clientesPage.getNumber(), clientesPage.getSize(), clientesPage.getTotalElements(),
+				clientesPage.getTotalPages());
+
+		return Optional.of(response);
 	}
 
+	@Override
+	public List<ClienteDTO> findAll() {
+		return clienteRepository.findAll().stream().map(cliente -> modelMapper.map(cliente, ClienteDTO.class))
+				.collect(Collectors.toList());
+	}
 
 	@Override
 	public Optional<ClienteDTO> findById(Long id) {
@@ -70,26 +76,26 @@ public class ClienteServiceImp implements ClienteService {
 
 	@Override
 	public Optional<ClienteDTO> update(Long id, Cliente cliente) {
-	    Optional<Cliente> existingClienteOptional = clienteRepository.findById(id);
+		Optional<Cliente> existingClienteOptional = clienteRepository.findById(id);
 
-	    if (existingClienteOptional.isPresent()) {
-	        Cliente existingCliente = existingClienteOptional.get();
+		if (existingClienteOptional.isPresent()) {
+			Cliente existingCliente = existingClienteOptional.get();
 
-	        existingCliente.setNome(cliente.getNome());
-	        existingCliente.setCpf(cliente.getCpf());
-	        existingCliente.setDataNascimento(cliente.getDataNascimento());
-	        existingCliente.setEndereco(cliente.getEndereco());
-	        existingCliente.setEmail(cliente.getEmail());
-	        existingCliente.setTelefone(cliente.getTelefone());
-	        existingCliente.setInfoBancarias(cliente.getInfoBancarias());
-	        existingCliente.setStatus(cliente.getStatus());
+			existingCliente.setNome(cliente.getNome());
+			existingCliente.setCpf(cliente.getCpf());
+			existingCliente.setDataNascimento(cliente.getDataNascimento());
+			existingCliente.setEndereco(cliente.getEndereco());
+			existingCliente.setEmail(cliente.getEmail());
+			existingCliente.setTelefone(cliente.getTelefone());
+			existingCliente.setInfoBancarias(cliente.getInfoBancarias());
+			existingCliente.setStatus(cliente.getStatus());
 
-	        Cliente updatedCliente = clienteRepository.save(existingCliente);
+			Cliente updatedCliente = clienteRepository.save(existingCliente);
 
-	        return Optional.of(new ClienteDTO(updatedCliente));
-	    } else {
-	        throw new NotFoundException("Cliente não encontrado para ID: " + id);
-	    }
+			return Optional.of(new ClienteDTO(updatedCliente));
+		} else {
+			throw new NotFoundException("Cliente não encontrado para ID: " + id);
+		}
 	}
 
 	@Override
