@@ -8,7 +8,10 @@ import com.emprestimo.model.Emprestimo;
 import com.emprestimo.service.EmprestimoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +24,13 @@ public class EmprestimoController {
     private EmprestimoService emprestimoService;
 
     @GetMapping
-    public ResponseEntity<EmprestimoPaginated> getAllEmprestimos(Pageable pageable) {
+    public ResponseEntity<EmprestimoPaginated> getAllEmprestimos(@PageableDefault(page = 0)Pageable pageable) {
+    	if (pageable.getPageNumber() > 1) {
+	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
+	    } else {
+	        pageable = PageRequest.of(0, pageable.getPageSize(), Sort.by("id").ascending());
+	    }
+    	
         return emprestimoService.findAllPaginated(pageable)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());

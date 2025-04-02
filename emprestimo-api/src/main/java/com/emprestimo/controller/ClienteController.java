@@ -5,7 +5,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.emprestimo.dto.ClienteDTO;
@@ -36,8 +39,14 @@ public class ClienteController {
 	private ClienteServiceImp clienteServiceImp;
 
 	@GetMapping
-	public ResponseEntity<Object> findAllPaginated(@PageableDefault(size = 10) Pageable pageable) {
-		Optional<ClientePaginated> result = clienteServiceImp.findAllPaginated(pageable);
+	public ResponseEntity<Object> findAllPaginated(@RequestParam(required = false) String searchTerm, @PageableDefault(page = 0) Pageable pageable) {
+		if (pageable.getPageNumber() > 1) {
+	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
+	    } else {
+	        pageable = PageRequest.of(0, pageable.getPageSize(), Sort.by("id").ascending());
+	    }
+		
+		Optional<ClientePaginated> result = clienteServiceImp.findAllPaginated(searchTerm,pageable);
 
 		if (result.isEmpty()) {
 			Map<String, Object> response = new HashMap<>();

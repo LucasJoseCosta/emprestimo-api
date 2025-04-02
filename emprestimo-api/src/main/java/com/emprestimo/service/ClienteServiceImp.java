@@ -27,23 +27,35 @@ public class ClienteServiceImp implements ClienteService {
 	private EntityManager entityManager;
 
 	@Override
-	public Optional<ClientePaginated> findAllPaginated(Pageable pageable) {
-		Page<Cliente> clientesPage = clienteRepository.findAll(pageable);
+	public Optional<ClientePaginated> findAllPaginated(String searchTerm, Pageable pageable) {
+	    Page<Cliente> clientesPage;
+	    
+	    if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+	        try {
+	            Long id = Long.parseLong(searchTerm);
+	            clientesPage = clienteRepository.findByIdOrNomeContainingIgnoreCase(id, searchTerm, pageable);
+	        } catch (NumberFormatException e) {
+	            clientesPage = clienteRepository.findByNomeContainingIgnoreCase(searchTerm, pageable);
+	        }
+	    } else {
+	        clientesPage = clienteRepository.findAll(pageable);
+	    }
 
-		if (clientesPage.isEmpty()) {
-			return Optional.empty();
-		}
+	    if (clientesPage.isEmpty()) {
+	        return Optional.empty();
+	    }
 
-		ClientePaginated response = new ClientePaginated(
-			clientesPage.getContent().stream().map(ClienteDTO::new).collect(Collectors.toList()),
-			clientesPage.getNumber(),
-			clientesPage.getSize(),
-			clientesPage.getTotalElements(),
-			clientesPage.getTotalPages()
-		);
+	    ClientePaginated response = new ClientePaginated(
+	        clientesPage.getContent().stream().map(ClienteDTO::new).collect(Collectors.toList()),
+	        clientesPage.getNumber(),
+	        clientesPage.getSize(),
+	        clientesPage.getTotalElements(),
+	        clientesPage.getTotalPages()
+	    );
 
-		return Optional.of(response);
+	    return Optional.of(response);
 	}
+
 
 	@Override
 	public Optional<ClienteDTO> findById(Long id) {

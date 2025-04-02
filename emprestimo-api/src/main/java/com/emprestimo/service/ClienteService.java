@@ -9,7 +9,7 @@ import com.emprestimo.dto.ClientePaginated;
 import com.emprestimo.model.Cliente;
 
 public interface ClienteService {
-	public Optional<ClientePaginated> findAllPaginated(Pageable pageable);
+	public Optional<ClientePaginated> findAllPaginated(String searchTerm, Pageable pageable);
 	public Optional<ClienteDTO> findById(Long id);
 	public ClienteDTO save(Cliente cliente);
 	public Optional<ClienteDTO> update(Long id, Cliente cliente);
