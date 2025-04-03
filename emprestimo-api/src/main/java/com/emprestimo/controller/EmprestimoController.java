@@ -27,10 +27,10 @@ public class EmprestimoController {
     private EmprestimoService emprestimoService;
 
     @GetMapping
-    public ResponseEntity<EmprestimoPaginated> getAllEmprestimos(@PageableDefault(page = 0)Pageable pageable) {
+    public ResponseEntity<EmprestimoPaginated> getAllEmprestimos(@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC)Pageable pageable) {
     	if (pageable.getPageNumber() > 1) {
 	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
-	    }  else {
+	    } else {
 	        Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("id").ascending();
 	        pageable = PageRequest.of(0, pageable.getPageSize(), sort);
 	    }

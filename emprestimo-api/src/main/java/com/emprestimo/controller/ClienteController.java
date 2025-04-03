@@ -41,7 +41,7 @@ public class ClienteController {
 	private ClienteServiceImp clienteServiceImp;
 
 	@GetMapping
-	public ResponseEntity<Object> findAllPaginated(@RequestParam(required = false) String searchTerm, @PageableDefault(page = 0) Pageable pageable) {
+	public ResponseEntity<Object> findAllPaginated(@RequestParam(required = false) String searchTerm,@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
 		if (pageable.getPageNumber() > 1) {
 	        pageable = PageRequest.of(pageable.getPageNumber() - 1, pageable.getPageSize(), pageable.getSort());
 	    } else {
