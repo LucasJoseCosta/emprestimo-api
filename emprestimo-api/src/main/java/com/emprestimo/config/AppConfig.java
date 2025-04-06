@@ -1,4 +1,4 @@
-package com.emprestimo;
+package com.emprestimo.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
