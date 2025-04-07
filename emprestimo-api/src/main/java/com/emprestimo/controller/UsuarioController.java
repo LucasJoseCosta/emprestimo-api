@@ -30,7 +30,7 @@ import com.emprestimo.service.UsuarioServiceImp;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class UsuarioController {
 	@Autowired
 	private UsuarioServiceImp usuarioService;
