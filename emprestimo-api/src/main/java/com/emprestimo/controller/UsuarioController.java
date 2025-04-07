@@ -1,7 +1,6 @@
 package com.emprestimo.controller;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,7 +11,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,22 +21,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.emprestimo.dto.ClienteDTO;
-import com.emprestimo.dto.ClientePaginated;
+import com.emprestimo.dto.UsuarioDTO;
+import com.emprestimo.dto.UsuarioPaginated;
 import com.emprestimo.errors.NotFoundException;
-import com.emprestimo.model.Cliente;
-import com.emprestimo.service.ClienteServiceImp;
+import com.emprestimo.model.Usuario;
+import com.emprestimo.service.UsuarioServiceImp;
 
 import jakarta.validation.Valid;
 
 @RestController
-@Validated
-@RequestMapping("/clientes")
-public class ClienteController {
-
+@RequestMapping("/user")
+public class UsuarioController {
 	@Autowired
-	private ClienteServiceImp clienteServiceImp;
-
+	private UsuarioServiceImp usuarioService;
+	
 	@GetMapping
 	public ResponseEntity<Object> findAllPaginated(@RequestParam(required = false) String searchTerm,@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
 		if (pageable.getPageNumber() > 1) {
@@ -48,7 +44,7 @@ public class ClienteController {
 	        pageable = PageRequest.of(0, pageable.getPageSize(), sort);
 	    }
 		
-		Optional<ClientePaginated> result = clienteServiceImp.findAllPaginated(searchTerm,pageable);
+		Optional<UsuarioPaginated> result = usuarioService.findAllPaginated(searchTerm,pageable);
 
 		if (result.isEmpty()) {
 			Map<String, Object> response = new HashMap<>();
@@ -60,23 +56,12 @@ public class ClienteController {
 		return ResponseEntity.ok(result.get());
 	}
 	
-	@GetMapping("/all")
-    public ResponseEntity<List<ClienteDTO>> getAll() {
-        List<ClienteDTO> clientes = clienteServiceImp.findAll();
-
-        if (clientes.isEmpty()) {
-            return ResponseEntity.noContent().build(); 
-        }
-
-        return ResponseEntity.ok(clientes); 
-    }
-
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> findById(@PathVariable Long id) {
-		Optional<ClienteDTO> clienteOptional = clienteServiceImp.findById(id);
+		Optional<UsuarioDTO> usuarioOptional = usuarioService.findById(id);
 
-		if (clienteOptional.isPresent()) {
-			return ResponseEntity.ok(clienteOptional.get());
+		if (usuarioOptional.isPresent()) {
+			return ResponseEntity.ok(usuarioOptional.get());
 		} else {
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", HttpStatus.NOT_FOUND.value());
@@ -84,31 +69,31 @@ public class ClienteController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
 	}
-
+	
 	@PostMapping
-	public ResponseEntity<Object> createCliente(@Valid @RequestBody Cliente cliente) {
+	public ResponseEntity<Object> createCliente(@Valid @RequestBody Usuario usuario) {
 		try {
-			ClienteDTO novoCliente = clienteServiceImp.save(cliente);
-			return ResponseEntity.status(HttpStatus.CREATED).body(novoCliente);
+			UsuarioDTO novoUsuario = usuarioService.save(usuario);
+			return ResponseEntity.status(HttpStatus.CREATED).body(novoUsuario);
 		} catch (Exception e) {
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-			response.put("message", "Erro ao criar o cliente: " + e.getMessage());
+			response.put("message", "Erro ao criar usuario: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<Object> updateCliente(@PathVariable Long id, @Valid @RequestBody Cliente cliente) {
+	public ResponseEntity<Object> updateCliente(@PathVariable Long id, @Valid @RequestBody Usuario usuario) {
 		try {
-			Optional<ClienteDTO> updatedClienteOpt = clienteServiceImp.update(id, cliente);
+			Optional<UsuarioDTO> updatedUsuarioOpt = usuarioService.update(id, usuario);
 
-			if (updatedClienteOpt.isPresent()) {
-				return ResponseEntity.ok(updatedClienteOpt.get());
+			if (updatedUsuarioOpt.isPresent()) {
+				return ResponseEntity.ok(updatedUsuarioOpt.get());
 			} else {
 				Map<String, Object> response = new HashMap<>();
 				response.put("status", HttpStatus.NOT_FOUND.value());
-				response.put("message", "Cliente não encontrado para ID: " + id);
+				response.put("message", "Usuario não encontrado para ID: " + id);
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 			}
 		} catch (NotFoundException e) {
@@ -119,18 +104,18 @@ public class ClienteController {
 		} catch (Exception e) {
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-			response.put("message", "Erro ao atualizar o cliente: " + e.getMessage());
+			response.put("message", "Erro ao atualizar o usuario: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
-
+	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Object> deleteCliente(@PathVariable Long id) {
 		try {
-			clienteServiceImp.delete(id);
+			usuarioService.delete(id);
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", HttpStatus.OK.value());
-			response.put("message", "Cliente deletado com sucesso");
+			response.put("message", "Usuario deletado com sucesso");
 			return ResponseEntity.ok(response);
 		} catch (NotFoundException e) {
 			Map<String, Object> response = new HashMap<>();
@@ -140,7 +125,7 @@ public class ClienteController {
 		} catch (Exception e) {
 			Map<String, Object> response = new HashMap<>();
 			response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-			response.put("message", "Erro ao deletar o cliente: " + e.getMessage());
+			response.put("message", "Erro ao deletar o usuario: " + e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}

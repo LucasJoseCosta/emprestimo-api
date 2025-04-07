@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+@SuppressWarnings("serial")
 @Entity
 public class Usuario implements UserDetails {
 	@Id
@@ -22,6 +23,8 @@ public class Usuario implements UserDetails {
 	private String password;
 	private String role;
 	private String token;
+	private String first_name;
+	private String last_name;
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -92,4 +95,19 @@ public class Usuario implements UserDetails {
 		this.token = token;
 	}
 
+	public String getFirst_name() {
+		return first_name;
+	}
+
+	public void setFirst_name(String first_name) {
+		this.first_name = first_name;
+	}
+
+	public String getLast_name() {
+		return last_name;
+	}
+
+	public void setLast_name(String last_name) {
+		this.last_name = last_name;
+	}
 }
